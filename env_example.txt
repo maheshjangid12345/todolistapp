@@ -1,0 +1,35 @@
+# Professional TODO App Environment Configuration
+
+# Flask Configuration
+FLASK_ENV=development
+SECRET_KEY=your-super-secret-key-change-in-production
+DEBUG=True
+
+# Database Configuration
+DATABASE_URL=sqlite:///todo.db
+# For PostgreSQL: postgresql://username:password@localhost/todo_db
+# For MySQL: mysql://username:password@localhost/todo_db
+
+# Server Configuration
+HOST=127.0.0.1
+PORT=5000
+
+# Security Configuration
+SESSION_COOKIE_SECURE=False
+SESSION_COOKIE_HTTPONLY=True
+SESSION_COOKIE_SAMESITE=Lax
+
+# Email Configuration (for future features)
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FILE=logs/todo_app.log
+
+# API Configuration
+API_RATE_LIMIT=100
+API_RATE_LIMIT_WINDOW=3600

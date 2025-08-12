@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Task - Professional TODO App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Task
+                    </h4>
+                    <a href="{{ url_for('tasks.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('tasks.edit_task', task_id=task.id) }}" id="editTaskForm">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">
+                                <i class="fas fa-tasks me-1"></i>Task Title *
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ task.title }}" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="priority" class="form-label">
+                                <i class="fas fa-flag me-1"></i>Priority
+                            </label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Low</option>
+                                <option value="medium" {{ 'selected' if task.priority == 'medium' }}>Medium</option>
+                                <option value="high" {{ 'selected' if task.priority == 'high' }}>High</option>
+                                <option value="urgent" {{ 'selected' if task.priority == 'urgent' }}>Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Description
+                        </label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="4" placeholder="Enter task description...">{{ task.description or '' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">
+                                <i class="fas fa-info-circle me-1"></i>Status
+                            </label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="pending" {{ 'selected' if task.status == 'pending' }}>Pending</option>
+                                <option value="in_progress" {{ 'selected' if task.status == 'in_progress' }}>In Progress</option>
+                                <option value="completed" {{ 'selected' if task.status == 'completed' }}>Completed</option>
+                                <option value="cancelled" {{ 'selected' if task.status == 'cancelled' }}>Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="due_date" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Due Date
+                            </label>
+                            <input type="datetime-local" class="form-control" id="due_date" name="due_date" 
+                                   value="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') if task.due_date else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">
+                            <i class="fas fa-tags me-1"></i>Category
+                        </label>
+                        <select class="form-select" id="category_id" name="category_id">
+                            <option value="">No Category</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if task.category and task.category.id == category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Task Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>Created: {{ task.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                <i class="fas fa-edit me-1"></i>Updated: {{ task.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                        </div>
+                        {% if task.completed_at %}
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                <i class="fas fa-check me-1"></i>Completed: {{ task.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                        <a href="{{ url_for('tasks.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteTask()">
+                            <i class="fas fa-trash me-2"></i>Delete Task
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Preview -->
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-eye me-2"></i>Task Preview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Title:</strong>
+                    <p id="previewTitle" class="mb-0">{{ task.title }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Priority:</strong>
+                    <span id="previewPriority" class="badge bg-{{ 'danger' if task.priority == 'urgent' else 'warning' if task.priority == 'high' else 'info' if task.priority == 'medium' else 'secondary' }}">
+                        {{ task.priority|title }}
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <span id="previewStatus" class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'pending' else 'info' if task.status == 'in_progress' else 'secondary' }}">
+                        {{ task.status|title|replace('_', ' ') }}
+                    </span>
+                </div>
+                
+                {% if task.description %}
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p id="previewDescription" class="mb-0">{{ task.description }}</p>
+                </div>
+                {% endif %}
+                
+                {% if task.due_date %}
+                <div class="mb-3">
+                    <strong>Due Date:</strong>
+                    <p id="previewDueDate" class="mb-0">
+                        {% if task.due_date < now and task.status != 'completed' %}
+                            <span class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>{{ task.due_date.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        {% else %}
+                            {{ task.due_date.strftime('%Y-%m-%d %H:%M') }}
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+                
+                {% if task.category %}
+                <div class="mb-3">
+                    <strong>Category:</strong>
+                    <span id="previewCategory" class="badge" style="background-color: {{ task.category.color }}; color: white;">
+                        {{ task.category.name }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this task?</p>
+                <p class="text-muted mb-0">
+                    <strong>"{{ task.title }}"</strong>
+                </p>
+                <p class="text-danger small mt-2">
+                    <i class="fas fa-info-circle me-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('tasks.delete_task', task_id=task.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete Task
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time preview updates
+    const titleInput = document.getElementById('title');
+    const prioritySelect = document.getElementById('priority');
+    const statusSelect = document.getElementById('status');
+    const descriptionInput = document.getElementById('description');
+    const dueDateInput = document.getElementById('due_date');
+    const categorySelect = document.getElementById('category_id');
+    
+    // Update preview when inputs change
+    titleInput.addEventListener('input', updatePreview);
+    prioritySelect.addEventListener('change', updatePreview);
+    statusSelect.addEventListener('change', updatePreview);
+    descriptionInput.addEventListener('input', updatePreview);
+    dueDateInput.addEventListener('input', updatePreview);
+    categorySelect.addEventListener('change', updatePreview);
+    
+    function updatePreview() {
+        // Update title preview
+        document.getElementById('previewTitle').textContent = titleInput.value || 'No title';
+        
+        // Update priority preview
+        const priority = prioritySelect.value;
+        const priorityPreview = document.getElementById('previewPriority');
+        priorityPreview.textContent = priority.charAt(0).toUpperCase() + priority.slice(1);
+        priorityPreview.className = `badge bg-${
+            priority === 'urgent' ? 'danger' : 
+            priority === 'high' ? 'warning' : 
+            priority === 'medium' ? 'info' : 'secondary'
+        }`;
+        
+        // Update status preview
+        const status = statusSelect.value;
+        const statusPreview = document.getElementById('previewStatus');
+        statusPreview.textContent = status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        statusPreview.className = `badge bg-${
+            status === 'completed' ? 'success' : 
+            status === 'pending' ? 'warning' : 
+            status === 'in_progress' ? 'info' : 'secondary'
+        }`;
+        
+        // Update description preview
+        const descriptionPreview = document.getElementById('previewDescription');
+        if (descriptionPreview) {
+            if (descriptionInput.value) {
+                descriptionPreview.textContent = descriptionInput.value;
+                descriptionPreview.parentElement.style.display = 'block';
+            } else {
+                descriptionPreview.parentElement.style.display = 'none';
+            }
+        }
+        
+        // Update due date preview
+        const dueDatePreview = document.getElementById('previewDueDate');
+        if (dueDateInput.value) {
+            const dueDate = new Date(dueDateInput.value);
+            const now = new Date();
+            if (dueDate < now && status !== 'completed') {
+                dueDatePreview.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>${dueDate.toLocaleString()}</span>`;
+            } else {
+                dueDatePreview.textContent = dueDate.toLocaleString();
+            }
+            dueDatePreview.parentElement.style.display = 'block';
+        } else {
+            dueDatePreview.parentElement.style.display = 'none';
+        }
+        
+        // Update category preview
+        const categoryPreview = document.getElementById('previewCategory');
+        if (categorySelect.value) {
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            categoryPreview.textContent = selectedOption.text;
+            categoryPreview.style.display = 'inline-block';
+        } else {
+            categoryPreview.style.display = 'none';
+        }
+    }
+    
+    // Form validation
+    document.getElementById('editTaskForm').addEventListener('submit', function(e) {
+        if (!titleInput.value.trim()) {
+            e.preventDefault();
+            alert('Task title is required!');
+            titleInput.focus();
+            return false;
+        }
+    });
+});
+
+function deleteTask() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteTaskModal'));
+    modal.show();
+}
+</script>
+{% endblock %}
