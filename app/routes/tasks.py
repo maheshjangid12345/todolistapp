@@ -128,11 +128,12 @@ def edit_task(task_id):
             flash('An error occurred while updating the task', 'danger')
 
     return render_template(
-        'tasks/edit_task.html',
-        task=task,
-        categories=categories,
-        due_date_str=task.due_date.strftime('%Y-%m-%dT%H:%M') if task.due_date else ''
-    )
+    'tasks/edit_task.html',
+    task=task,
+    categories=categories,
+    due_date_str=task.due_date.strftime('%Y-%m-%dT%H:%M') if task.due_date else '',
+    now=datetime.utcnow()  # pass 'now' for template comparisons
+)
 
 # ---------------- DELETE TASK ----------------
 @tasks_bp.route('/delete/<int:task_id>', methods=['POST'])
