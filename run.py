@@ -4,10 +4,14 @@ from app import create_app
 from app.extensions import db
 from app.models import User, Task, TaskCategory
 
+
+
 # Load environment variables
 load_dotenv()
 
 app = create_app()
+
+
 
 def create_tables():
     """Create database tables and add default admin user if it doesn't exist"""

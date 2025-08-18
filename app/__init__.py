@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template
 from flask_cors import CORS
 from app.extensions import db, login_manager, migrate
+from .models import User, Task, TaskCategory
 
 def create_app():
     app = Flask(__name__, instance_path=None)
@@ -10,6 +11,8 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///./todo.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Optional: Load from config.py if needed
+    # app.config.from_object("config.Config")
     
     # Security configurations
     app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'

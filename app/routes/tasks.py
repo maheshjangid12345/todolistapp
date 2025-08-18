@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Task, TaskCategory
-from datetime import datetime
 import json
+from datetime import datetime, timezone
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -20,20 +20,30 @@ def dashboard():
     in_progress_tasks = len([t for t in tasks if t.status == 'in_progress'])
     completed_tasks = len([t for t in tasks if t.status == 'completed'])
     
-    # Overdue tasks
-    overdue_tasks = [t for t in tasks if t.due_date and t.due_date < datetime.utcnow() and t.status != 'completed']
+    # Overdue tasks (compare naive datetimes)
+    overdue_tasks = [
+        t for t in tasks
+        if t.due_date and t.due_date < datetime.utcnow() and t.status != 'completed'
+    ]
     
     # Categories
     categories = TaskCategory.query.filter_by(user_id=current_user.id).all()
     
-    return render_template('tasks/dashboard.html',
-                         tasks=tasks,
-                         categories=categories,
-                         total_tasks=total_tasks,
-                         pending_tasks=pending_tasks,
-                         in_progress_tasks=in_progress_tasks,
-                         completed_tasks=completed_tasks,
-                         overdue_tasks=overdue_tasks)
+    # Pass 'now' to template
+    return render_template(
+        'tasks/dashboard.html',
+        tasks=tasks,
+        categories=categories,
+        total_tasks=total_tasks,
+        pending_tasks=pending_tasks,
+        in_progress_tasks=in_progress_tasks,
+        completed_tasks=completed_tasks,
+        overdue_tasks=overdue_tasks,
+        now=datetime.utcnow()  # naive UTC
+    )
+
+
+
 
 @tasks_bp.route('/add', methods=['POST'])
 @login_required
